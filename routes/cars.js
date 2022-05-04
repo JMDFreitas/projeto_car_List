@@ -12,6 +12,9 @@ router.get('/', async (req, res) => {
         for (let i = 0; i < data.length; i++) {
             data[i] = { qtdModels: data[i].models.length, ...data[i] };
         }
+        for (const item of data) {
+            console.log(`${item.brand} ${item.models.length}`);
+        }
         data = data.sort((a, b) => a.qtdModels - b.qtdModels);
 
         await writeFile(global.fileName, JSON.stringify(data, null, 4));
@@ -23,41 +26,43 @@ router.get('/', async (req, res) => {
 });
 
 // Retorna a marcar que tem mais modelos
-router.get('/brand/moreModels', async (req, res) => {
+router.get('/moreModels', async (req, res) => {
     try {
         const data = JSON.parse(await readFile(global.fileName));
-        const moreModels = `Brand - ${data[data.length - 1].brand}`;
-
-        res.send(moreModels);
+        data.sort((a, b) => b.models.length - a.models.length);
+        res.send(data[0].brand);
     } catch (error) {
         res.status(400).send({ error: error.message });
     }
 });
 
 // Retorna a marcar que tem menos modelos
-router.get('/brand/lessModels', async (req, res) => {
+router.get('/lessModels', async (req, res) => {
     try {
         const data = JSON.parse(await readFile(global.fileName));
-        const lessModels = `Brand - ${data[0].brand}`;
-
-        res.send(lessModels);
+        data.sort((a, b) => a.models.length - b.models.length);
+        res.send(data[0].brand);
     } catch (error) {
         res.status(400).send({ error: error.message });
     }
 });
 
 //Retorna uma lista com X marcas que mais possuem modelos, X e um parametro passado na uri
-router.get('/brand/listMoreModels/:value', async (req, res) => {
+router.get('/listMoreModels/:value', async (req, res) => {
     try {
-        let data = JSON.parse(await readFile(global.fileName));
-        data = data.sort((a, b) => b.qtdModels - a.qtdModels);
+        const data = JSON.parse(await readFile(global.fileName));
+        data.sort((a, b) => {
+            return (
+                b.models.length - a.models.length ||
+                a.brand.localeCompare(b.brand)
+            );
+        });
         const listMoreModels = [];
 
         for (let i = 0; i < req.params.value; i++) {
-            let models = `Brand ${data[i].brand} - ${data[i].qtdModels}`;
+            let models = `${data[i].brand} - ${data[i].models.length}`;
             listMoreModels.push(models);
         }
-        listMoreModels.sort((a, b) => a.brand - b.brand);
         res.send(listMoreModels);
     } catch (error) {
         res.status(400).send({ error: error.message });
@@ -65,13 +70,19 @@ router.get('/brand/listMoreModels/:value', async (req, res) => {
 });
 
 //Retorna uma lista com X marcas que menos possuem modelos, X e um parametro passado na uri
-router.get('/brand/listLessModels/:value', async (req, res) => {
+router.get('/listLessModels/:value', async (req, res) => {
     try {
-        let data = JSON.parse(await readFile(global.fileName));
+        const data = JSON.parse(await readFile(global.fileName));
+        data.sort((a, b) => {
+            return (
+                a.models.length - b.models.length ||
+                a.brand.localeCompare(b.brand)
+            );
+        });
         const listLessModels = [];
 
         for (let i = 0; i < req.params.value; i++) {
-            let models = `Brand ${data[i].brand} - ${data[i].qtdModels}`;
+            let models = `Brand ${data[i].brand} - ${data[i].models.length}`;
             listLessModels.push(models);
         }
 
@@ -82,7 +93,7 @@ router.get('/brand/listLessModels/:value', async (req, res) => {
 });
 
 // Retorna uma lista de modelos de acordo com o nome da marca passada via json
-router.post('/brand/listModel', async (req, res) => {
+router.post('/listModel', async (req, res) => {
     try {
         const data = JSON.parse(await readFile(global.fileName));
         let brandCar = req.body;

@@ -1,7 +1,7 @@
 {
     "name": "projeto_car_list",
     "version": "1.0.0",
-    "main": "index.js",
+    "main": "index2.js",
     "devDependencies": {},
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
